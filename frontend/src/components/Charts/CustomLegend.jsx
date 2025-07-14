@@ -1,22 +1,19 @@
-import React from 'react'
+import React from 'react';
 
-const CustomLegend = ({ payload }) => {
+const CustomLegend = ({ payload, getStatusColor }) => {
     return (
-        <div className='flex flex-wrap justify-center gap-2 mt-4 space-x-6'>
-            {payload.map((entry, index) => {
-                return (
-                    <div key={`legend-${index}`} className='flex items-center space-x-2'>
-                        <div
-                            className='w-2.5 h-2.5 rounded-full'
-                            style={{ backgroundColor: entry.color }}
-                        >
-                        </div>
-                        <span className='text-xs tex-gray-700 font-medium'>{entry.value}</span>
-                    </div>
-                )
-            })}
-        </div>
-    )
-}
+        <ul className="flex flex-row flex-wrap justify-center gap-x-4 gap-y-2 p-2 mt-2">
+            {payload.map((entry, index) => (
+                <li key={`item-${index}`} className="flex items-center gap-2 text-sm text-gray-700">
+                    <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: getStatusColor(entry.payload) }}
+                    ></div>
+                    <span>{entry.value}</span>
+                </li>
+            ))}
+        </ul>
+    );
+};
 
-export default CustomLegend
+export default CustomLegend;

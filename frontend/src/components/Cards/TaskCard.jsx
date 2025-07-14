@@ -1,5 +1,5 @@
 import React from 'react'
-import Progress from '../layouts/Progress';
+import Progress from '../Progress';
 import AvatarGroup from '../AvatarGroup'
 import { LuPaperclip } from 'react-icons/lu';
 import moment from 'moment';
