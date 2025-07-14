@@ -15,6 +15,11 @@ const messageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const conversationSchema = new mongoose.Schema({
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
     history: [messageSchema], // An array of messages
 }, { timestamps: true });
 

@@ -12,24 +12,20 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
  */
 exports.handleChat = async (req, res) => {
   try {
-    const { message, conversationId } = req.body;
+    const { message } = req.body;
+    // 1. Lấy userId từ người dùng đã được xác thực
+    const userId = req.user.id;
 
-    // Basic validation
     if (!message) {
       return res.status(400).json({ error: 'Message is required.' });
     }
 
-    let conversation;
+    // 2. Tìm cuộc trò chuyện GẦN NHẤT chỉ dựa vào userId
+    let conversation = await Conversation.findOne({ userId }).sort({ updatedAt: -1 });
 
-    // Find existing conversation or create a new one
-    if (conversationId) {
-      conversation = await Conversation.findById(conversationId);
-      if (!conversation) {
-        // If an invalid ID is provided, create a new conversation
-        conversation = new Conversation();
-      }
-    } else {
-      conversation = new Conversation();
+    // 3. Nếu không có, tạo mới với userId đó
+    if (!conversation) {
+      conversation = new Conversation({ userId, history: [] });
     }
 
     // Prepare the history for the Gemini API
@@ -74,24 +70,26 @@ exports.handleChat = async (req, res) => {
  */
 exports.getHistory = async (req, res) => {
   try {
-    const { conversationId } = req.params; // Get ID from URL parameter
-    
-    // Set up pagination variables from query string, with default values
+    const userId = req.user.id; // Get user ID from the authenticated user
+
+    // Set up pagination variables
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
 
-    if (!conversationId) {
-      return res.status(400).json({ error: 'Conversation ID is required.' });
-    }
+    // Find the most recent conversation for this user
+    const conversation = await Conversation.findOne({ userId }).sort({ updatedAt: -1 });
 
-    // Find the conversation by its ID
-    const conversation = await Conversation.findById(conversationId);
-
+    // If the user has no conversations at all
     if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found.' });
+      return res.status(200).json({
+        history: [],
+        currentPage: 1,
+        totalPages: 0,
+        totalMessages: 0,
+      });
     }
-    
+
     // Get the total number of messages for calculating total pages
     const totalMessages = conversation.history.length;
     const totalPages = Math.ceil(totalMessages / limit);
