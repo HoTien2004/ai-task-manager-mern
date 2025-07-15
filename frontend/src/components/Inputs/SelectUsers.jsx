@@ -89,7 +89,7 @@ const SelectUsers = ({ selectedUsers, setSelectUsers }) => {
                                 type='checkbox'
                                 checked={tempSelectedUsers.includes(user._id)}
                                 onChange={() => toggleUserSelection(user._id)}
-                                className='w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded-sm outline-none'
+                                className='w-4 h-4 accent-primary bg-gray-100 border-gray-300 rounded-sm outline-none'
                             />
                         </div>
                     ))}

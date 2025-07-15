@@ -3,7 +3,6 @@ import DashboardLayout from '../../components/layouts/DashboardLayout'
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
-import { LuFileSpreadsheet } from "react-icons/lu"
 import TaskStatusTabs from '../../components/TaskStatusTabs';
 import TaskCard from '../../components/Cards/TaskCard';
 
@@ -43,7 +42,7 @@ const MyTasks = () => {
 
   const handleClick = (taskId) => {
     navigate(`/user/task-details/${taskId}`)
-  }
+  };
 
   useEffect(() => {
     getAllTasks(filterStatus);
@@ -51,7 +50,7 @@ const MyTasks = () => {
   }, [filterStatus]);
 
   return (
-    <DashboardLayout activeMenu="Manage Tasks">
+    <DashboardLayout activeMenu="My Tasks">
       <div className='my-5'>
         <div className='flex flex-col lg:flex-row lg:items-center justify-between'>
           <h2 className='text-xl md:text-xl font-medium'>My Tasks</h2>
@@ -78,7 +77,7 @@ const MyTasks = () => {
                 createdAt={item.createdAt}
                 dueDate={item.dueDate}
                 assignedTo={item.assignedTo?.map((item) => item.profileImageUrl)}
-                attachmentCount={item.attachmentCount?.length || 0}
+                attachmentCount={item.attachments?.length || 0}
                 completedTodoCount={item.completedTodoCount || 0}
                 todoChecklist={item.todoChecklist || []}
                 onClick={() => {
