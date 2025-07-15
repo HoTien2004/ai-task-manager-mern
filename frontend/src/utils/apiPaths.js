@@ -36,5 +36,10 @@ export const API_PATHS = {
 
     IMAGE: {
         UPLOAD_IMAGE: "/api/auth/upload-image",
+    },
+
+    GEMINI: {
+        HISTORY: "api/gemini/history",  //for fetching message history 
+        QUERY: "api/gemini/query"       //for 
     }
 };
