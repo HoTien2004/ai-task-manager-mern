@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axiosInstance from '../utils/axiosInstance';
-import { API_PATH } from '../utils/apiPaths';
+import { API_PATHS } from '../utils/apiPaths';
 
 /**
  * A custom hook to manage chat state and API interactions.
@@ -13,7 +13,7 @@ export const useChat = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const response = await axiosInstance.get(API_PATH.GEMINI.HISTORY);
+                const response = await axiosInstance.get(API_PATHS.GEMINI.HISTORY);
                 const formatted = response.data.history.map((msg, index) => ({
                     id: `hist-${index}`,
                     user: msg.role === 'model' ? 'Bot' : 'You',
@@ -39,7 +39,7 @@ export const useChat = () => {
         setMessages(prev => [...prev, userMessage]);
 
         try {
-            const response = await axiosInstance.post(API_PATH.GEMINI.QUERY, { message: messageText });
+            const response = await axiosInstance.post(API_PATHS.GEMINI.QUERY, { message: messageText });
             const botMessage = {
                 id: `bot-${Date.now()}`,
                 user: 'Bot',

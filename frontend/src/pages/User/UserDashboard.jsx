@@ -12,6 +12,7 @@ import { LuArrowRight } from 'react-icons/lu';
 import TaskListTable from '../../components/TaskListTable';
 import CustomPieChart from '../../components/Charts/CustomPieChart';
 import CustomBarChart from '../../components/Charts/CustomBarChart';
+import DraggableChatWindow from '../../components/DraggableChatWindow';
 
 const COLORS = ["#8D51FF", "#00B8D8", "#7BCE00"]
 
@@ -159,6 +160,7 @@ const UserDashboard = () => {
           </div>
         </div>
       </div>
+      <DraggableChatWindow />
     </DashboardLayout>
   )
 }

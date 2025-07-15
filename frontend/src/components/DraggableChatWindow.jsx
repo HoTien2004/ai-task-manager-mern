@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+// components/DraggableChatWindow.jsx
+
+import React, { useState, useEffect, useRef } from 'react'; // 1. Thêm useRef vào import
 import Draggable from 'react-draggable';
 import ReactMarkdown from 'react-markdown';
-import { useChat } from '../hooks/useChat'; // Import the custom hook
+import { useChat } from '../hooks/useChat';
 import './DraggableChatWindow.css';
 
 const DraggableChatWindow = () => {
@@ -9,6 +11,8 @@ const DraggableChatWindow = () => {
     const [inputValue, setInputValue] = useState('');
     const { messages, isLoading, error, sendMessage } = useChat();
     const chatBodyRef = useRef(null);
+
+    const nodeRef = useRef(null); // 2. Tạo một ref cho Draggable
 
     useEffect(() => {
         if (chatBodyRef.current) {
@@ -37,8 +41,10 @@ const DraggableChatWindow = () => {
     }
 
     return (
-        <Draggable handle=".chat-header">
-            <div className="chat-window">
+        // 3. Truyền nodeRef vào component Draggable
+        <Draggable nodeRef={nodeRef} handle=".chat-header">
+            {/* 4. Gán ref vào phần tử DOM chính mà bạn muốn kéo */}
+            <div className="chat-window" ref={nodeRef}>
                 <div className="chat-header">
                     <span>Chat Support</span>
                     <button onClick={() => setIsMinimized(true)} className="minimize-btn">-</button>
