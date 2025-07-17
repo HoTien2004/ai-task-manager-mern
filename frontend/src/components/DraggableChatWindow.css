@@ -3,13 +3,15 @@
     position: fixed;
     width: 350px;
     height: 500px;
+    right: 20px;
+    bottom: 20px;
     border: 1px solid #ccc;
     border-radius: 10px;
     background-color: #fff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    z-index: 9990;
+    z-index: 99999;
     overflow: hidden;
 }
 
@@ -24,7 +26,7 @@
     align-items: center;
     justify-content: center;
     background-color: rgba(0, 0, 0, 0.2);
-    z-index: 9990;
+    z-index: 99999;
     transition: background-color 0.3s ease-in-out;
 }
 
@@ -165,7 +167,7 @@
     font-size: 30px;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 9990;
+    z-index: 99999;
 }
 
 .chat-info {

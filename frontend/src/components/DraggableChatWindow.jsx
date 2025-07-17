@@ -8,7 +8,6 @@ import { FiMaximize, FiMinimize, FiX } from 'react-icons/fi';
 const DraggableChatWindow = () => {
     const [viewMode, setViewMode] = useState('minimized');
     const [inputValue, setInputValue] = useState('');
-    const [position, setPosition] = useState(null);
     const { messages, isLoading, error, sendMessage, fetchMoreHistory, isFetchingMore } = useChat();
     const chatBodyRef = useRef(null);
     const nodeRef = useRef(null);
@@ -19,16 +18,6 @@ const DraggableChatWindow = () => {
             chatBodyRef.current.scrollTop = scrollHeight - clientHeight;
         }
     }, [messages, isFetchingMore]);
-
-    useEffect(() => {
-        if (viewMode === 'normal' && position === null) {
-            const windowWidth = 350;
-            const windowHeight = 500;
-            const x = window.innerWidth - windowWidth - 20;
-            const y = window.innerHeight - windowHeight - 20;
-            setPosition({ x, y });
-        }
-    }, [viewMode, position]);
 
     const handleSendMessage = () => {
         if (!inputValue.trim()) return;
@@ -54,10 +43,6 @@ const DraggableChatWindow = () => {
 
     const handleRestoreFromIcon = () => {
         setViewMode('normal');
-    };
-
-    const handleDragStop = (e, data) => {
-        setPosition({ x: data.x, y: data.y });
     };
 
     const ChatWindowContent = (
@@ -115,13 +100,11 @@ const DraggableChatWindow = () => {
         );
     }
 
-    if (viewMode === 'normal' && position !== null) {
+    if (viewMode === 'normal') {
         return (
             <Draggable
                 nodeRef={nodeRef}
                 handle=".chat-header"
-                onStop={handleDragStop}
-                position={position}
             >
                 <div className="chat-window-draggable" ref={nodeRef}>
                     {ChatWindowContent}
