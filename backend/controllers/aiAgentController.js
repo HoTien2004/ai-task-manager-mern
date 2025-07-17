@@ -3,7 +3,13 @@ const Conversation = require('../models/aiAgentQuery/DataSheetForAIAgent');
 
 // Initialize the Google Generative AI client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+const systemInstruction = ``;
+
+const model = genAI.getGenerativeModel({
+  model: 'gemini-2.5-flash',
+  systemInstruction: systemInstruction
+});
 
 /**
  * Handles incoming chat requests, interacts with Gemini API, and saves the conversation.
@@ -37,7 +43,7 @@ exports.handleChat = async (req, res) => {
     const chat = model.startChat({
       history: history,
       generationConfig: {
-        maxOutputTokens: 1000,
+        maxOutputTokens: 10000,
       },
     });
 
