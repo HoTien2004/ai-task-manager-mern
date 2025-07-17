@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { API_PATHS } from '../../utils/apiPaths'
 import axiosInstance from '../../utils/axiosInstance'
 import uploadImage from '../../utils/uploadImage';
-import { UserContext } from '../../context/userContext';
+import { UserContext } from '../../context/UserContext';
 
 const SignUp = () => {
     const [profilePic, setProfilePic] = useState(null);
