@@ -1,75 +1,104 @@
-/* Main container for the chat window */
-.chat-window {
+.chat-window-draggable {
+    font-family: sans-serif;
     position: fixed;
-    /* Keeps the window in a fixed position relative to the viewport */
-    bottom: 20px;
-    right: 20px;
     width: 350px;
     height: 500px;
+    right: 20px;
+    bottom: 20px;
     border: 1px solid #ccc;
     border-radius: 10px;
     background-color: #fff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    z-index: 9999;
-    /* Ensures the window is always on top */
+    z-index: 99999;
     overflow: hidden;
 }
 
-/* Header section of the chat window */
+.maximized-overlay {
+    font-family: sans-serif;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.2);
+    z-index: 99999;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.chat-window-maximized {
+    width: 90%;
+    height: 90%;
+    border-radius: 16px;
+    background-color: #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    transform: scale(1);
+}
+
 .chat-header {
     padding: 10px 15px;
     background-color: #007bff;
     color: white;
     font-weight: bold;
     cursor: move;
-    /* Indicates that this element is draggable */
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
-/* Minimize button in the header */
-.minimize-btn {
+.chat-header-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-header-btn {
     background: none;
     border: none;
     color: white;
-    font-size: 20px;
+    opacity: 0.8;
     cursor: pointer;
-    padding: 0 5px;
+    font-size: 16px;
+    transition: opacity 0.2s;
 }
 
-/* Body of the chat, where messages are displayed */
+.chat-header-btn:hover {
+    opacity: 1;
+}
+
 .chat-body {
     flex-grow: 1;
     padding: 15px;
     overflow-y: auto;
-    /* Allows scrolling for messages */
     background-color: #f9f9f9;
 }
 
-/* Styling for an individual chat message */
 .chat-message {
     margin-bottom: 15px;
     display: flex;
 }
 
-/* Styling for the message content bubble */
 .message-content {
     padding: 10px 15px;
     border-radius: 18px;
     max-width: 80%;
+    word-wrap: break-word;
 }
 
-/* Message from the bot */
 .chat-message.bot .message-content {
     background-color: #e9e9eb;
     color: #000;
     border-top-left-radius: 4px;
 }
 
-/* Message from the user */
 .chat-message.you {
     justify-content: flex-end;
 }
@@ -80,7 +109,6 @@
     border-top-right-radius: 4px;
 }
 
-/* Markdown specific styles */
 .message-content p {
     margin: 0;
 }
@@ -91,18 +119,17 @@
     padding: 10px;
     border-radius: 5px;
     white-space: pre-wrap;
-    word-wrap: break-word;
 }
 
 .message-content code {
     font-family: 'Courier New', Courier, monospace;
 }
 
-/* Footer section for message input */
 .chat-footer {
     padding: 10px;
     border-top: 1px solid #ccc;
     display: flex;
+    gap: 10px;
 }
 
 .chat-footer input {
@@ -110,7 +137,6 @@
     border: 1px solid #ddd;
     border-radius: 20px;
     padding: 8px 15px;
-    margin-right: 10px;
 }
 
 .chat-footer button {
@@ -126,7 +152,6 @@
     background-color: #0056b3;
 }
 
-/* The icon shown when the window is minimized */
 .chat-icon-container {
     position: fixed;
     bottom: 20px;
@@ -142,18 +167,18 @@
     font-size: 30px;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 9999;
+    z-index: 99999;
 }
 
 .chat-info {
     text-align: center;
-    padding: 20px;
+    padding: 12px;
     color: #888;
     font-style: italic;
+    font-size: 13px;
 }
 
 .chat-info.error {
     color: #d9534f;
-    /* A reddish color for errors */
-    font-weight: bold;
+    font-weight: 500;
 }
