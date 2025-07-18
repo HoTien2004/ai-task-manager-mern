@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
   role: {
     type: String,
-    enum: ['user', 'model'], // Role can only be 'user' or 'model' (Gemini)
+    enum: ['user', 'model'],
     required: true,
   },
   parts: [{
@@ -15,12 +15,17 @@ const messageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const conversationSchema = new mongoose.Schema({
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    history: [messageSchema], // An array of messages
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  title: {
+    type: String,
+    required: true,
+    default: 'Cuộc trò chuyện mới'
+  },
+  history: [messageSchema],
 }, { timestamps: true });
 
 const Conversation = mongoose.model('Conversation', conversationSchema);

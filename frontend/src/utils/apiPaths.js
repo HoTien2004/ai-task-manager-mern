@@ -40,6 +40,7 @@ export const API_PATHS = {
 
     GEMINI: {
         HISTORY: "api/gemini/history",  //for fetching message history 
-        QUERY: "api/gemini/query"       //for 
+        QUERY: "api/gemini/query",       //for 
+        CONVERSATION_LISTS: "api/gemini/conversation-list"
     }
 };

@@ -3,12 +3,15 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import DraggableChatWindow from '../DraggableChatWindow';
+import { ChatProvider } from '../../context/ChatContext';
 
 const AdminLayout = () => {
     return (
         <>
-            <Outlet />
-            <DraggableChatWindow />
+            <ChatProvider>
+                <Outlet />
+                <DraggableChatWindow />
+            </ChatProvider>
         </>
     );
 };
