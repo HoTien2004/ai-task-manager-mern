@@ -21,7 +21,7 @@ const TaskCard = ({
     todoChecklist,
     onClick
 }) => {
-    const { setTaskForChat } = useChat();
+    const { initializeTaskDiscussion } = useChat();
 
     const getStatusTagColor = () => {
         switch (status) {
@@ -42,11 +42,8 @@ const TaskCard = ({
     const handleDiscussTask = (e) => {
         e.stopPropagation();
         if (window.confirm(`Bạn có muốn tạo ra 1 cuộc thảo luận mới với chatbot về task ${title}?`)) {
-            deleteConversation(conversationId);
+            initializeTaskDiscussion(_id);
         }
-        const taskInfo = `Hãy thảo luận về công việc: "${title}" (ID: ${_id})`;
-
-        setTaskForChat(taskInfo, _id);
     };
 
     return (

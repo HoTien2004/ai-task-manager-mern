@@ -15,7 +15,7 @@ const DraggableChatWindow = () => {
         messages, isLoading, error, sendMessage,
         conversations, switchConversation, deleteConversation,
         currentConversationId, isInitialized, initializeChat,
-        startNewConversation, taskToDiscuss, clearTaskForChat
+        startNewConversation,
     } = useChat();
 
     const chatBodyRef = useRef(null);
@@ -46,15 +46,13 @@ const DraggableChatWindow = () => {
     }, [dropdownRef]);
 
 
-    useEffect(() => {
-        if (taskToDiscuss) {
-            setInputValue(taskToDiscuss);
-            if (viewMode === 'minimized') {
-                handleRestoreFromIcon();
-            }
-            clearTaskForChat();
-        }
-    }, [taskToDiscuss, clearTaskForChat, viewMode]);
+    // useEffect(() => {
+    //     if (isChatWindowOpen) {
+    //         setViewMode('normal');
+    //     } else {
+    //         setViewMode('minimized');
+    //     }
+    // }, [isChatWindowOpen]);
 
     const handleSendMessage = () => {
         if (!inputValue.trim()) return;

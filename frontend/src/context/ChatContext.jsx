@@ -12,9 +12,12 @@ export const ChatProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [error, setError] = useState(null);
-    const [taskToDiscuss, setTaskToDiscuss] = useState(null);
 
     const [messageCache, setMessageCache] = useState({});
+
+    const [isInitializingDiscussion, setIsInitializingDiscussion] = useState(false);
+
+    const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
 
     useEffect(() => {
         if (currentConversationId && messages.length > 0) {
@@ -59,36 +62,30 @@ export const ChatProvider = ({ children }) => {
     const initializeChat = useCallback(async () => {
         if (isInitialized) return;
         setIsLoading(true);
-        setError(null);
         try {
             const convData = await fetchConversations();
             if (convData.length > 0) {
                 const firstConvId = convData[0]._id;
                 setCurrentConversationId(firstConvId);
                 await fetchMessages(firstConvId);
-            } else {
-                setCurrentConversationId(null);
-                setMessages([]);
             }
-            setIsInitialized(true);
         } catch (err) {
             setError("Không thể tải dữ liệu ban đầu.");
-            console.error(err);
         } finally {
             setIsLoading(false);
+            setIsInitialized(true);
         }
     }, [isInitialized, fetchConversations, fetchMessages]);
 
     const switchConversation = useCallback(async (id) => {
-        if (id !== currentConversationId) {
-            setCurrentConversationId(id);
-            if (messageCache[id]) {
-                setMessages(messageCache[id]);
-            } else {
-                await fetchMessages(id);
-            }
+        if (id === currentConversationId && messages.length > 0) return;
+        setCurrentConversationId(id);
+        if (messageCache[id]) {
+            setMessages(messageCache[id]);
+        } else {
+            await fetchMessages(id);
         }
-    }, [currentConversationId, messageCache, fetchMessages]);
+    }, [currentConversationId, messageCache, fetchMessages, messages.length]);
 
     const startNewConversation = useCallback(async (newTitle) => {
         setIsLoading(true);
@@ -190,15 +187,49 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
-    const setTaskForChat = (taskInfo) => setTaskToDiscuss(taskInfo);
-    const clearTaskForChat = () => setTaskToDiscuss(null);
+    const initializeTaskDiscussion = async (taskId) => {
+        setIsInitializingDiscussion(true);
+        setError(null);
+        try {
+            const response = await axiosInstance.post(API_PATHS.GEMINI.TASK_HELP_INITIALIZE, { taskId });
+            const { conversationId: newConversationId } = response.data;
+
+            if (newConversationId) {
+                // Step 1: Fetch lại danh sách cuộc trò chuyện
+                await fetchConversations();
+                // Step 2: Chuyển sang cuộc trò chuyện mới
+                await switchConversation(newConversationId);
+
+                // [INSTRUCTION_B]
+                // This is the crucial new step. After all data is loaded and the
+                // conversation is switched, this line sets the global state to true,
+                // signaling the DraggableChatWindow component to open.
+                // [INSTRUCTION_E]
+                setIsChatWindowOpen(true);
+            }
+        } catch (err) {
+            console.error("Failed to initialize task discussion:", err);
+            setError("Không thể bắt đầu cuộc trò chuyện cho công việc này.");
+            alert("Lỗi: Không thể bắt đầu cuộc trò chuyện. Vui lòng thử lại.");
+        } finally {
+            setIsInitializingDiscussion(false);
+        }
+    };
+
 
     const value = {
-        messages, isLoading: isLoading || isLoadingMessages, error, sendMessage,
-        isInitialized, initializeChat,
-        conversations, currentConversationId, switchConversation,
-        deleteConversation, startNewConversation,
-        taskToDiscuss, setTaskForChat, clearTaskForChat
+        messages,
+        isLoading: isLoading || isLoadingMessages || isInitializingDiscussion,
+        error,
+        sendMessage,
+        isInitialized,
+        initializeChat,
+        conversations,
+        currentConversationId,
+        switchConversation,
+        deleteConversation,
+        startNewConversation,
+        initializeTaskDiscussion, // Expose the updated function
     };
 
     return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

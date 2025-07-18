@@ -47,6 +47,6 @@ export const API_PATHS = {
             DELETE: (id) => `api/gemini/conversation/delete/${id}`,
             EDIT_NAME: "api/gemini/conversation/edit-name"
         },
-        TASK_HELP_INITIALIZE: "api/gemini/task-help-initalize"
+        TASK_HELP_INITIALIZE: "api/gemini/task-help-initialize"
     },
 };
