@@ -6,22 +6,43 @@ export const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
     const [isInitialized, setIsInitialized] = useState(false);
-    const [conversations, setConversations] = useState({});
-    const [prompts, setPrompts] = useState([]);
+    const [conversations, setConversations] = useState([]);
     const [currentConversationId, setCurrentConversationId] = useState(null);
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [error, setError] = useState(null);
     const [taskToDiscuss, setTaskToDiscuss] = useState(null);
 
     const fetchConversations = useCallback(async () => {
-        const response = await axiosInstance.get(API_PATHS.GEMINI.CONVERSATION_LISTS);
-        return response.data;
+        try {
+            const response = await axiosInstance.get(API_PATHS.GEMINI.CONVERSATION_LISTS);
+            const fetchedConversations = response.data.conversations || [];
+            setConversations(fetchedConversations);
+            return fetchedConversations;
+        } catch (err) {
+            console.error("Failed to fetch conversations", err);
+            setError("Không thể tải danh sách cuộc trò chuyện.");
+            return [];
+        }
     }, []);
 
-    const fetchPrompts = useCallback(async () => {
-        const response = await axiosInstance.get(API_PATHS.PROMPTS.LIST);
-        return response.data;
+    const fetchMessages = useCallback(async (conversationId) => {
+        if (!conversationId) {
+            setMessages([]);
+            return;
+        }
+        setIsLoadingMessages(true);
+        try {
+            const response = await axiosInstance.get(`${API_PATHS.GEMINI.HISTORY}?conversationId=${conversationId}`);
+            setMessages(response.data.history || []);
+        } catch (err) {
+            console.error("Failed to fetch messages", err);
+            setError(`Không thể tải tin nhắn cho cuộc trò chuyện ${conversationId}.`);
+            setMessages([]);
+        } finally {
+            setIsLoadingMessages(false);
+        }
     }, []);
 
     const initializeChat = useCallback(async () => {
@@ -29,17 +50,14 @@ export const ChatProvider = ({ children }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const [convData, promptData] = await Promise.all([
-                fetchConversations(),
-                fetchPrompts()
-            ]);
-            const firstConvId = Object.keys(convData)[0] || null;
-
-            setConversations(convData);
-            setPrompts(promptData);
-            if (firstConvId) {
+            const convData = await fetchConversations();
+            if (convData.length > 0) {
+                const firstConvId = convData[0]._id;
                 setCurrentConversationId(firstConvId);
-                setMessages(convData[firstConvId].messages || []);
+                await fetchMessages(firstConvId);
+            } else {
+                setCurrentConversationId(null);
+                setMessages([]);
             }
             setIsInitialized(true);
         } catch (err) {
@@ -48,31 +66,47 @@ export const ChatProvider = ({ children }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [isInitialized, fetchConversations, fetchPrompts]);
+    }, [isInitialized, fetchConversations, fetchMessages]);
 
-    const switchConversation = (id) => {
+    const switchConversation = useCallback(async (id) => {
         if (id !== currentConversationId) {
             setCurrentConversationId(id);
-            setMessages(conversations[id]?.messages || []);
+            await fetchMessages(id);
         }
-    };
+    }, [currentConversationId, fetchMessages]);
+
+    const startNewConversation = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await axiosInstance.get(API_PATHS.GEMINI.NEW_CHAT);
+            const newConv = response.data;
+            const updatedConversations = await fetchConversations();
+            if (updatedConversations.length > 0) {
+                const newCurrentId = updatedConversations.find(c => c._id === newConv.conversationId)?._id || updatedConversations[0]._id;
+                setCurrentConversationId(newCurrentId);
+                await fetchMessages(newCurrentId);
+            }
+        } catch (err) {
+            alert("Tạo cuộc trò chuyện mới thất bại.");
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [fetchConversations, fetchMessages]);
+
 
     const deleteConversation = async (id) => {
-        if (Object.keys(conversations).length <= 1) {
+        if (conversations.length <= 1) {
             alert("Không thể xóa cuộc trò chuyện cuối cùng.");
             return;
         }
         try {
-            await axiosInstance.delete(API_PATHS.CONVERSATIONS.DELETE(id));
-            const newConversations = { ...conversations };
-            delete newConversations[id];
-
+            await axiosInstance.delete(API_PATHS.GEMINI.DELETE(id));
             if (id === currentConversationId) {
-                const newCurrentId = Object.keys(newConversations)[0];
-                setCurrentConversationId(newCurrentId);
-                setMessages(newConversations[newCurrentId]?.messages || []);
+                await initializeChat();
+            } else {
+                await fetchConversations();
             }
-            setConversations(newConversations);
         } catch (err) {
             alert("Xóa cuộc trò chuyện thất bại.");
             console.error(err);
@@ -82,19 +116,27 @@ export const ChatProvider = ({ children }) => {
     const sendMessage = async (messageText) => {
         if (!currentConversationId) return;
 
-        const userMessage = { id: `msg-${Date.now()}`, user: 'You', text: messageText };
+        const userMessage = { id: `msg-${Date.now()}`, role: 'user', content: [{ type: 'text', text: messageText }] };
         setMessages(prev => [...prev, userMessage]);
+        setIsLoadingMessages(true);
 
         try {
-            const response = await axiosInstance.post(API_PATHS.GEMINI.QUERY, {
-                message: messageText,
-                conversationId: currentConversationId
-            });
-            const botMessage = { id: `bot-${Date.now()}`, user: 'Bot', text: response.data.response };
+            const response = await axiosInstance.post(
+                API_PATHS.GEMINI.QUERY,
+                { message: messageText },
+                {
+                    params: {
+                        conversationId: currentConversationId
+                    }
+                }
+            );
+            const botMessage = { id: `bot-${Date.now()}`, role: 'model', content: [{ type: 'text', text: response.data.response }] };
             setMessages(prev => [...prev, botMessage]);
         } catch (err) {
-            const errorMessage = { id: `err-${Date.now()}`, user: 'Bot', text: `_Lỗi: ${err.message}_` };
+            const errorMessage = { id: `err-${Date.now()}`, role: 'model', content: [{ type: 'text', text: `_Lỗi: ${err.message}_` }] };
             setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsLoadingMessages(false);
         }
     };
 
@@ -102,10 +144,10 @@ export const ChatProvider = ({ children }) => {
     const clearTaskForChat = () => setTaskToDiscuss(null);
 
     const value = {
-        messages, isLoading, error, sendMessage,
+        messages, isLoading: isLoading || isLoadingMessages, error, sendMessage,
         isInitialized, initializeChat,
-        conversations: Object.entries(conversations).map(([id, data]) => ({ id, ...data })),
-        currentConversationId, prompts, switchConversation, deleteConversation,
+        conversations, currentConversationId, switchConversation,
+        deleteConversation, startNewConversation,
         taskToDiscuss, setTaskForChat, clearTaskForChat
     };
 

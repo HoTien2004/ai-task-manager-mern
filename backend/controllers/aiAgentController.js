@@ -5,7 +5,8 @@ const Task = require('../models/Task');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const aimodel = 'gemini-2.5-flash';
-const systemInstruction = `Bạn là một Trợ lý Quản lý Công việc Thông minh. Bạn hãy giúp tôi trả lời các câu hỏi liên quan đến quản lý công việc.`;
+// const systemInstruction = `Bạn là một Trợ lý Quản lý Công việc Thông minh. Bạn hãy giúp tôi trả lời các câu hỏi liên quan đến quản lý công việc.`;
+const systemInstruction = '';
 
 const getTaskObjectById = async (taskId, userId) => {
   return await Task.findOne({
@@ -70,20 +71,21 @@ exports.startNewConversation = async (req, res) => {
  */
 exports.handleChat = async (req, res) => {
   try {
-    let { message, conversationId } = req.query;
+    let { conversationId } = req.query;
+    let { message } = req.body;
     const userId = req.user.id;
 
     if (!message || !conversationId) {
       return res.status(400).json({ error: 'message and conversationId are required.' });
     }
 
-    if (isSupportForTask === true && taskId) {
-      const task = await getTaskObjectById(taskId, userId);
-      if (!task) {
-        return res.status(404).json({ error: 'Task not found or permission denied.' });
-      }
-      message = createPromptForTaskSupport(task);
-    }
+    // if (isSupportForTask === true && taskId) {
+    //   const task = await getTaskObjectById(taskId, userId);
+    //   if (!task) {
+    //     return res.status(404).json({ error: 'Task not found or permission denied.' });
+    //   }
+    //   message = createPromptForTaskSupport(task);
+    // }
 
     const model = genAI.getGenerativeModel({
       model: aimodel,
@@ -219,4 +221,36 @@ exports.getAllConversationsForUser = async (req, res) => {
   }
 };
 
-exports.createPromptForTaskSupport
+/**
+ * Deletes a specific conversation by its ID,
+ * ensuring it belongs to the logged-in user.
+ */
+exports.deleteConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    // Find and delete the document that matches both the conversationId and userId
+    const result = await Conversation.findOneAndDelete({
+      _id: conversationId,
+      userId: userId,
+    });
+
+    // If no document was found and deleted, it means it either didn't exist
+    // or the user does not have permission.
+    if (!result) {
+      return res.status(404).json({
+        error: 'Conversation not found or you do not have permission to delete it.',
+      });
+    }
+
+    // If deletion was successful, send a success response.
+    res.status(200).json({ message: 'Đã xoá cuộc trò chuyện thành công.' });
+
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// exports.createPromptForTaskSupport

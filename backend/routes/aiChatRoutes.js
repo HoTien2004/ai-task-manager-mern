@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const chatController = require('../controllers/aiAgentController');
+const aiAgentController = require('../controllers/aiAgentController');
 const { protect } = require('../middlewares/authMiddleware');
 
 /**
  * @
  */
-router.post('/query', protect, chatController.handleChat);
-router.get('/history', protect, chatController.getHistory);
-router.get('/conversation-list', protect, chatController.getAllConversationsForUser);
-router.get('/new-chat', protect, chatController.startNewConversation);
+router.post('/query', protect, aiAgentController.handleChat);
+router.get('/history', protect, aiAgentController.getHistory);
+router.get('/conversation-list', protect, aiAgentController.getAllConversationsForUser);
+router.get('/new-chat', protect, aiAgentController.startNewConversation);
+router.delete('/conversations/:conversationId', protect, aiAgentController.deleteConversation);
 
 module.exports = router;

@@ -41,6 +41,8 @@ export const API_PATHS = {
     GEMINI: {
         HISTORY: "api/gemini/history",  //for fetching message history 
         QUERY: "api/gemini/query",       //for 
-        CONVERSATION_LISTS: "api/gemini/conversation-list"
-    }
+        CONVERSATION_LISTS: "api/gemini/conversation-list",
+        NEW_CHAT: "api/gemini/new-chat",
+        DELETE: (id) => `api/conversations/${id}`
+    },
 };
