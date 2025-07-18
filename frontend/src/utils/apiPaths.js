@@ -43,6 +43,10 @@ export const API_PATHS = {
         QUERY: "api/gemini/query",       //for 
         CONVERSATION_LISTS: "api/gemini/conversation-list",
         NEW_CHAT: "api/gemini/new-chat",
-        DELETE: (id) => `api/conversations/${id}`
+        CONVERSATION: {
+            DELETE: (id) => `api/gemini/conversation/delete/${id}`,
+            EDIT_NAME: "api/gemini/conversation/edit-name"
+        },
+        TASK_HELP_INITIALIZE: "api/gemini/task-help-initalize"
     },
 };

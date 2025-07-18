@@ -4,26 +4,45 @@ const Task = require('../models/Task');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const aimodel = 'gemini-2.5-flash';
-// const systemInstruction = `Bạn là một Trợ lý Quản lý Công việc Thông minh. Bạn hãy giúp tôi trả lời các câu hỏi liên quan đến quản lý công việc.`;
-const systemInstruction = '';
+const model = genAI.getGenerativeModel({
+  model: 'gemini-2.5-flash',
+  systemInstruction: `Bạn là một Trợ lý Quản lý Công việc Thông minh, còn tôi có vai trò quản trị công việc. Bạn hãy giúp tôi trả lời các câu hỏi liên quan đến quản lý công việc. Nếu có bất kỳ câu hỏi nào đến từ tôi mà lạc chủ đề, hãy gơi`
+})
 
-const getTaskObjectById = async (taskId, userId) => {
+/**
+ * Calls the Gemini API with a specific message and conversation history.
+ * @param {string} message The new user message.
+ * @param {Array<object>} history The existing conversation history.
+ * @returns {Promise<string>} The text response from the model.
+ */
+const callGeminiAPI = async (message, history) => {
+  try {
+    const chat = model.startChat({
+      history: history,
+      generationConfig: { maxOutputTokens: 10000 },
+    });
+    const result = await chat.sendMessage(message);
+    return result.response.text();
+  } catch (apiError) {
+    console.error("Gemini API Error:", apiError);
+    // Ném lỗi ra để hàm gọi nó (handleChat) có thể bắt và xử lý
+    throw new Error("Failed to get response from AI model.");
+  }
+};
+
+
+const getTaskObjectById = async (taskId) => {
   return await Task.findOne({
-    _id: taskId,
-    $or: [{ createdBy: userId }, { assignedTo: userId }]
+    _id: taskId
   }).lean();
 };
 
 const createPromptForTaskSupport = (task) => {
   const taskString = JSON.stringify(task, null, 2);
-  return `Hãy hoạt động như một trợ lý chuyên gia. Dưới đây là thông tin chi tiết về một công việc (task) mà tôi cần hỗ trợ.
+  return `Tôi muốn bắt đầu 1 cuộc thảo luận để hỗ trợ cho 1 công việc cụ thể. Nếu bạn đã sẵn sàng để thảo luận, hãy trả lời ngắn gọn rằng bạn đồng ý giúp đỡ, và gợi ý các câu hỏi tiếp theo. Dưới đây là thông tin chi tiết về một công việc (task) mà tôi cần hỗ trợ.
 ---
 ### DỮ LIỆU TASK (JSON):
-${taskString}
----
-### YÊU CẦU CỦA TÔI:
-"${userMessage}"`;
+${taskString}`;
 };
 
 /**
@@ -32,29 +51,25 @@ ${taskString}
 exports.startNewConversation = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { newTitle } = req.body;
+
+    const defaultTitle = `Cuộc trò chuyện mới lúc ${(() => {
+      const d = new Date();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const seconds = String(d.getSeconds()).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${hours}:${minutes}:${seconds} ${day}-${month}-${year}`;
+    })()}`;
+
     const newConversation = new Conversation({
       userId,
-      title: `Cuộc trò chuyện mới lúc ${(() => {
-        // [INSTRUCTION_B]
-        // This is an Immediately Invoked Function Expression (IIFE).
-        // The entire function is defined and then executed immediately
-        // by the final parentheses (). This allows us to write multi-line
-        // logic directly inside a template literal.
-        // [INSTRUCTION_E]
-        const d = new Date();
-
-        // Get all parts and pad them with a leading zero if needed
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        const seconds = String(d.getSeconds()).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0'); // Add 1 to month
-        const year = d.getFullYear();
-
-        // Return the final formatted string
-        return `${hours}:${minutes}:${seconds} ${day}-${month}-${year}`;
-      })()}`
+      title: newTitle ? newTitle : defaultTitle
     });
+
+
     await newConversation.save();
     res.status(201).json({
       conversationId: newConversation._id,
@@ -66,31 +81,49 @@ exports.startNewConversation = async (req, res) => {
   }
 };
 
+exports.InitializeChatForTask = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { taskId } = req.body;
+
+    const task = await getTaskObjectById(taskId);
+
+    const message = createPromptForTaskSupport(task);
+    const history = "";
+    const modelResponseText = await callGeminiAPI(message, history);
+
+    const conversation = new Conversation({
+      userId,
+      title: `Hỗ trợ cho ${task.title}`
+    });
+    conversation.history.push({ role: 'user', parts: [{ text: message }] });
+    conversation.history.push({ role: 'model', parts: [{ text: modelResponseText }] });
+    await conversation.save();
+
+    res.status(200).json({
+      response: modelResponseText,
+      conversationId: conversation._id,
+    });
+
+  } catch (error) {
+    console.error('Error in InnitializeChatForTask:', error);
+    res.status(500).json({ error: 'An internal server error occurred.' });
+  }
+};
+
 /**
- * Handles incoming chat messages, including specialized requests for task support.
+ * Handles incoming chat requests by orchestrating data retrieval,
+ * calling the Gemini API, and saving the conversation.
  */
 exports.handleChat = async (req, res) => {
   try {
-    let { conversationId } = req.query;
+    const { conversationId } = req.query;
     let { message } = req.body;
     const userId = req.user.id;
 
     if (!message || !conversationId) {
       return res.status(400).json({ error: 'message and conversationId are required.' });
     }
-
-    // if (isSupportForTask === true && taskId) {
-    //   const task = await getTaskObjectById(taskId, userId);
-    //   if (!task) {
-    //     return res.status(404).json({ error: 'Task not found or permission denied.' });
-    //   }
-    //   message = createPromptForTaskSupport(task);
-    // }
-
-    const model = genAI.getGenerativeModel({
-      model: aimodel,
-      systemInstruction: systemInstruction
-    });
 
     const conversation = await Conversation.findOne({ _id: conversationId, userId });
     if (!conversation) {
@@ -102,13 +135,7 @@ exports.handleChat = async (req, res) => {
       parts: msg.parts.map(part => ({ text: part.text })),
     }));
 
-    const chat = model.startChat({
-      history: history,
-      generationConfig: { maxOutputTokens: 10000 },
-    });
-
-    const result = await chat.sendMessage(message);
-    const modelResponseText = result.response.text();
+    const modelResponseText = await callGeminiAPI(message, history);
 
     conversation.history.push({ role: 'user', parts: [{ text: message }] });
     conversation.history.push({ role: 'model', parts: [{ text: modelResponseText }] });
@@ -131,7 +158,7 @@ exports.getTaskDetails = async (req, res) => {
   try {
     const { taskId } = req.params;
     const userId = req.user.id;
-    const task = await getTaskObjectById(taskId, userId);
+    const task = await getTaskObjectById(taskId);
 
     if (!task) {
       return res.status(404).json({ error: 'Task not found or you do not have permission.' });
@@ -253,4 +280,3 @@ exports.deleteConversation = async (req, res) => {
   }
 };
 
-// exports.createPromptForTaskSupport

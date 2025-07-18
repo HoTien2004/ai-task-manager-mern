@@ -109,6 +109,7 @@ const ManageTasks = () => {
             return (
               <TaskCard
                 key={item._id}
+                {...item}
                 title={item.title}
                 description={item.description}
                 priority={item.priority}

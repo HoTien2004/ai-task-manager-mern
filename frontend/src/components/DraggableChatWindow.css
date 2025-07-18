@@ -103,7 +103,7 @@
 
 .conversation-dropdown {
     position: absolute;
-    width: 100%;
+    width: 95%;
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -112,6 +112,8 @@
     max-height: 250px;
     display: flex;
     flex-direction: column;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .new-chat-btn {
@@ -260,6 +262,53 @@
 
 .message-content p {
     margin: 0;
+}
+
+/* General styling for paragraphs, lists, etc. inside a message */
+.message-content>*:not(:last-child) {
+    margin-bottom: 12px;
+}
+
+/* Styling for bulleted and numbered lists */
+.message-content ul,
+.message-content ol {
+    padding-left: 25px;
+    margin-top: 5px;
+}
+
+/* Styling for code blocks (```) */
+.message-content pre {
+    background-color: #2d2d2d;
+    /* Dark background for code */
+    color: #9a9a9a00;
+    /* Light text color */
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    /* Allow horizontal scrolling for long code */
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    white-space: pre;
+    /* Preserve whitespace and newlines */
+}
+
+/* Styling for inline code (`code`) */
+.message-content p code,
+.message-content li code {
+    background-color: rgba(135, 131, 120, 0.15);
+    color: #000000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Styling for blockquotes (>) */
+.message-content blockquote {
+    margin-left: 0;
+    padding-left: 15px;
+    border-left: 4px solid #ccc;
+    color: #141414;
+    font-style: italic;
 }
 
 .chat-footer {

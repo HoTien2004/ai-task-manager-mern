@@ -3,6 +3,7 @@ import Draggable from 'react-draggable';
 import ReactMarkdown from 'react-markdown';
 import { useChat } from '../hooks/useChat';
 import './DraggableChatWindow.css';
+import remarkGfm from 'remark-gfm';
 import { FiMaximize, FiMinimize, FiX, FiChevronDown, FiTrash2, FiLoader, FiPlusCircle } from 'react-icons/fi';
 
 const DraggableChatWindow = () => {
@@ -90,7 +91,7 @@ const DraggableChatWindow = () => {
     };
 
     const handleNewChat = () => {
-        startNewConversation();
+        startNewConversation("");
         setIsDropdownOpen(false);
     };
 
@@ -179,7 +180,7 @@ const DraggableChatWindow = () => {
                         return (
                             <div key={msg.id || index} className={`chat-message ${role}`}>
                                 <div className="message-content">
-                                    <ReactMarkdown>{textContent}</ReactMarkdown>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{textContent}</ReactMarkdown>
                                 </div>
                             </div>
                         );

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useEffect } from 'react';
 import axiosInstance from '../utils/axiosInstance';
 import { API_PATHS } from '../utils/apiPaths';
 
@@ -13,6 +13,17 @@ export const ChatProvider = ({ children }) => {
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [error, setError] = useState(null);
     const [taskToDiscuss, setTaskToDiscuss] = useState(null);
+
+    const [messageCache, setMessageCache] = useState({});
+
+    useEffect(() => {
+        if (currentConversationId && messages.length > 0) {
+            setMessageCache(prevCache => ({
+                ...prevCache,
+                [currentConversationId]: messages
+            }));
+        }
+    }, [messages, currentConversationId]);
 
     const fetchConversations = useCallback(async () => {
         try {
@@ -71,14 +82,18 @@ export const ChatProvider = ({ children }) => {
     const switchConversation = useCallback(async (id) => {
         if (id !== currentConversationId) {
             setCurrentConversationId(id);
-            await fetchMessages(id);
+            if (messageCache[id]) {
+                setMessages(messageCache[id]);
+            } else {
+                await fetchMessages(id);
+            }
         }
-    }, [currentConversationId, fetchMessages]);
+    }, [currentConversationId, messageCache, fetchMessages]);
 
-    const startNewConversation = useCallback(async () => {
+    const startNewConversation = useCallback(async (newTitle) => {
         setIsLoading(true);
         try {
-            const response = await axiosInstance.get(API_PATHS.GEMINI.NEW_CHAT);
+            const response = await axiosInstance.get(API_PATHS.GEMINI.NEW_CHAT, { newTitle: newTitle });
             const newConv = response.data;
             const updatedConversations = await fetchConversations();
             if (updatedConversations.length > 0) {
@@ -101,12 +116,22 @@ export const ChatProvider = ({ children }) => {
             return;
         }
         try {
-            await axiosInstance.delete(API_PATHS.GEMINI.DELETE(id));
+
+            await axiosInstance.delete(API_PATHS.GEMINI.CONVERSATION.DELETE(id));
+
+            setMessageCache(prevCache => {
+                const newCache = { ...prevCache };
+                delete newCache[id];
+                return newCache;
+            });
+
             if (id === currentConversationId) {
-                await initializeChat();
-            } else {
-                await fetchConversations();
+                setMessages([]);
+                setCurrentConversationId(null);
             }
+
+            await fetchConversations();
+
         } catch (err) {
             alert("Xóa cuộc trò chuyện thất bại.");
             console.error(err);
@@ -114,28 +139,53 @@ export const ChatProvider = ({ children }) => {
     };
 
     const sendMessage = async (messageText) => {
-        if (!currentConversationId) return;
-
-        const userMessage = { id: `msg-${Date.now()}`, role: 'user', content: [{ type: 'text', text: messageText }] };
-        setMessages(prev => [...prev, userMessage]);
-        setIsLoadingMessages(true);
+        // [INSTRUCTION_B]
+        // This function is significantly updated.
+        // 1. It checks if there is a `currentConversationId`.
+        // 2. If not, it automatically calls the API to create a new conversation first.
+        // 3. It then uses this new ID to send the message.
+        // 4. It also ensures the optimistic UI update uses the correct `parts` structure.
+        // [INSTRUCTION_E]
+        let conversationIdToUse = currentConversationId;
 
         try {
+            // If there's no active conversation, create one first.
+            if (!conversationIdToUse) {
+                setIsLoading(true);
+                const response = await axiosInstance.get(API_PATHS.GEMINI.NEW_CHAT);
+                const newConv = response.data;
+                conversationIdToUse = newConv.conversationId;
+
+                // Update state and refresh conversation list
+                setCurrentConversationId(conversationIdToUse);
+                await fetchConversations();
+            }
+
+            // Optimistically update UI with the user's message
+            const userMessage = { id: `msg-${Date.now()}`, role: 'user', parts: [{ text: messageText }] };
+            setMessages(prev => [...prev, userMessage]);
+            setIsLoadingMessages(true);
+
+            // Send message to the backend
             const response = await axiosInstance.post(
                 API_PATHS.GEMINI.QUERY,
                 { message: messageText },
                 {
                     params: {
-                        conversationId: currentConversationId
+                        conversationId: conversationIdToUse
                     }
                 }
             );
-            const botMessage = { id: `bot-${Date.now()}`, role: 'model', content: [{ type: 'text', text: response.data.response }] };
+
+            // Update UI with the bot's response
+            const botMessage = { id: `bot-${Date.now()}`, role: 'model', parts: [{ text: response.data.response }] };
             setMessages(prev => [...prev, botMessage]);
+
         } catch (err) {
-            const errorMessage = { id: `err-${Date.now()}`, role: 'model', content: [{ type: 'text', text: `_Lỗi: ${err.message}_` }] };
+            const errorMessage = { id: `err-${Date.now()}`, role: 'model', parts: [{ text: `_Lỗi: ${err.message}_` }] };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
+            setIsLoading(false);
             setIsLoadingMessages(false);
         }
     };
