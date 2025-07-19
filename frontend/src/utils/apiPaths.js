@@ -1,4 +1,6 @@
-export const BASE_URL = "http://localhost:8000";
+export const BASE_URL = "https://ai-task-manager-mern.onrender.com/";
+
+// export const BASE_URL = "http://localhost:8000";
 
 // utils/api/apiPaths.js
 export const API_PATHS = {
