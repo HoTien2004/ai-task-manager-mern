@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.5-flash',
-  systemInstruction: `Bạn là một Trợ lý Quản lý Công việc Thông minh, còn tôi có vai trò quản trị công việc. Bạn hãy giúp tôi trả lời các câu hỏi liên quan đến quản lý công việc. Nếu có bất kỳ câu hỏi nào đến từ tôi mà lạc chủ đề, hãy gơi`
+  systemInstruction: `Bạn là một Trợ lý Quản lý Công việc Thông minh, còn tôi có vai trò quản trị công việc. Bạn hãy giúp tôi trả lời các câu hỏi liên quan đến quản lý công việc. Nếu có bất kỳ câu hỏi nào đến từ tôi mà lạc chủ đề, hãy nhẹ nhàng hướng chủ đề về chủ đề ban đầu`
 })
 
 /**
@@ -22,6 +22,7 @@ const callGeminiAPI = async (message, history) => {
       generationConfig: { maxOutputTokens: 10000 },
     });
     const result = await chat.sendMessage(message);
+    // console.log("\ntoken_history: ", token_history = model.countTokens({ contents: history }), "\ntoken_message: ", token_message = model.countTokens({ contents: message }), "\ntoken_response: ", token_response = model.countTokens({ contents: result }), "\ntoken_total: ", token_history + token_message + token_response);
     return result.response.text();
   } catch (apiError) {
     console.error("Gemini API Error:", apiError);
@@ -96,7 +97,9 @@ exports.InitializeChatForTask = async (req, res) => {
       userId,
       title: `Hỗ trợ cho ${task.title}`
     });
-    conversation.history.push({ role: 'user', parts: [{ text: message }] });
+
+    const message_ = `Tôi cần bạn hỗ trợ cho công việc ${task.title} có hạn chót ${task.dueDate}`;
+    conversation.history.push({ role: 'user', parts: [{ text: message_ }] });
     conversation.history.push({ role: 'model', parts: [{ text: modelResponseText }] });
     await conversation.save();
 

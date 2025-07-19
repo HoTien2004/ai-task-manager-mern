@@ -16,6 +16,7 @@ const DraggableChatWindow = () => {
         conversations, switchConversation, deleteConversation,
         currentConversationId, isInitialized, initializeChat,
         startNewConversation,
+        isAwaitingResponse
     } = useChat();
 
     const chatBodyRef = useRef(null);
@@ -146,14 +147,14 @@ const DraggableChatWindow = () => {
             )}
 
             <div className="chat-body" ref={chatBodyRef}>
-                {isLoading ? (
+                {(isLoading && messages.length === 0) ? (
                     <div className="chat-info loading">
                         <FiLoader className="spinner" />
                         <span>Đang tải dữ liệu...</span>
                     </div>
                 ) : error ? (
                     <div className="chat-info error">{error}</div>
-                ) : messages.length === 0 && isInitialized && !isLoading ? (
+                ) : messages.length === 0 && isInitialized ? (
                     <div className="suggestions-container">
                         <p className="suggestions-title">Bạn có thể bắt đầu với:</p>
                         <div className="suggestions-scroll">
@@ -165,24 +166,37 @@ const DraggableChatWindow = () => {
                         </div>
                     </div>
                 ) : (
-                    messages.map((msg, index) => {
-                        const role = msg.role === 'user' ? 'you' : 'bot';
+                    <>
+                        {messages.map((msg, index) => {
+                            const role = msg.role === 'user' ? 'you' : 'bot';
 
-                        let textContent = '';
-                        if (msg.parts && msg.parts.length > 0 && typeof msg.parts[0].text !== 'undefined') {
-                            textContent = msg.parts[0].text;
-                        } else if (msg.content && msg.content.length > 0 && typeof msg.content[0].text !== 'undefined') {
-                            textContent = msg.content[0].text;
-                        }
+                            let textContent = '';
+                            if (msg.parts && msg.parts.length > 0 && typeof msg.parts[0].text !== 'undefined') {
+                                textContent = msg.parts[0].text;
+                            } else if (msg.content && msg.content.length > 0 && typeof msg.content[0].text !== 'undefined') {
+                                textContent = msg.content[0].text;
+                            }
 
-                        return (
-                            <div key={msg.id || index} className={`chat-message ${role}`}>
-                                <div className="message-content">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{textContent}</ReactMarkdown>
+                            return (
+                                <div key={msg.id || index} className={`chat-message ${role}`}>
+                                    <div className="message-content">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{textContent}</ReactMarkdown>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {isAwaitingResponse && (
+                            <div className="chat-message bot">
+                                <div className="message-content typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
                                 </div>
                             </div>
-                        );
-                    })
+                        )}
+
+                    </>
                 )}
             </div>
 
@@ -193,7 +207,7 @@ const DraggableChatWindow = () => {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="Nhập tin nhắn..."
-                    disabled={isLoading || !isInitialized}
+                    disabled={isLoading || isAwaitingResponse || !isInitialized}
                 />
                 <button onClick={handleSendMessage} disabled={isLoading || !isInitialized || !inputValue.trim()}>Gửi</button>
             </div>

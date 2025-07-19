@@ -19,6 +19,8 @@ export const ChatProvider = ({ children }) => {
 
     const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
 
+    const [isAwaitingResponse, setIsAwaitingResponse] = useState(false);
+
     useEffect(() => {
         if (currentConversationId && messages.length > 0) {
             setMessageCache(prevCache => ({
@@ -90,7 +92,7 @@ export const ChatProvider = ({ children }) => {
     const startNewConversation = useCallback(async (newTitle) => {
         setIsLoading(true);
         try {
-            const response = await axiosInstance.get(API_PATHS.GEMINI.NEW_CHAT, { newTitle: newTitle });
+            const response = await axiosInstance.post(API_PATHS.GEMINI.NEW_CHAT, { newTitle: newTitle });
             const newConv = response.data;
             const updatedConversations = await fetchConversations();
             if (updatedConversations.length > 0) {
@@ -108,10 +110,10 @@ export const ChatProvider = ({ children }) => {
 
 
     const deleteConversation = async (id) => {
-        if (conversations.length <= 1) {
-            alert("Không thể xóa cuộc trò chuyện cuối cùng.");
-            return;
-        }
+        // if (conversations.length <= 1) {
+        //     alert("Không thể xóa cuộc trò chuyện cuối cùng.");
+        //     return;
+        // }
         try {
 
             await axiosInstance.delete(API_PATHS.GEMINI.CONVERSATION.DELETE(id));
@@ -149,7 +151,9 @@ export const ChatProvider = ({ children }) => {
             // If there's no active conversation, create one first.
             if (!conversationIdToUse) {
                 setIsLoading(true);
-                const response = await axiosInstance.get(API_PATHS.GEMINI.NEW_CHAT);
+                const response = await axiosInstance.post(API_PATHS.GEMINI.NEW_CHAT, {
+                    newTitle: ""
+                });
                 const newConv = response.data;
                 conversationIdToUse = newConv.conversationId;
 
@@ -163,6 +167,7 @@ export const ChatProvider = ({ children }) => {
             setMessages(prev => [...prev, userMessage]);
             setIsLoadingMessages(true);
 
+            setIsAwaitingResponse(true);
             // Send message to the backend
             const response = await axiosInstance.post(
                 API_PATHS.GEMINI.QUERY,
@@ -184,6 +189,7 @@ export const ChatProvider = ({ children }) => {
         } finally {
             setIsLoading(false);
             setIsLoadingMessages(false);
+            setIsAwaitingResponse(false);
         }
     };
 
@@ -219,7 +225,8 @@ export const ChatProvider = ({ children }) => {
 
     const value = {
         messages,
-        isLoading: isLoading || isLoadingMessages || isInitializingDiscussion,
+        isLoading: isLoading || isLoadingMessages,
+        isAwaitingResponse, // Export trạng thái mớ
         error,
         sendMessage,
         isInitialized,
