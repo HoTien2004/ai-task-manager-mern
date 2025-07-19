@@ -29,43 +29,45 @@ const App = () => {
   return (
     <>
       <UserProvider>
-        <div>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
+        <ChatProvider>
+          <div>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<SignUp />} />
 
-              {/* Admin Routes */}
-              <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-                <Route element={<AdminLayout />}>
-                  <Route path="/admin/dashboard" element={<Dashboard />} />
-                  <Route path="/admin/create-task" element={<CreateTask />} />
-                  <Route path="/admin/tasks" element={<ManageTasks />} />
-                  <Route path="/admin/users" element={<ManageUsers />} />
+                {/* Admin Routes */}
+                <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+                  <Route element={<AdminLayout />}>
+                    <Route path="/admin/dashboard" element={<Dashboard />} />
+                    <Route path="/admin/create-task" element={<CreateTask />} />
+                    <Route path="/admin/tasks" element={<ManageTasks />} />
+                    <Route path="/admin/users" element={<ManageUsers />} />
+                  </Route>
                 </Route>
-              </Route>
 
-              {/* User Routes */}
-              <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-                <Route path="/user/dashboard" element={<UserDashboard />} />
-                <Route path="/user/tasks" element={<MyTasks />} />
-                <Route path="/user/task-details/:id" element={<ViewTaskDetails />} />
-              </Route>
+                {/* User Routes */}
+                <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+                  <Route path="/user/dashboard" element={<UserDashboard />} />
+                  <Route path="/user/tasks" element={<MyTasks />} />
+                  <Route path="/user/task-details/:id" element={<ViewTaskDetails />} />
+                </Route>
 
-              {/* Default Route */}
-              <Route path="/" element={<Root />} />
-            </Routes>
-          </Router>
-        </div>
+                {/* Default Route */}
+                <Route path="/" element={<Root />} />
+              </Routes>
+            </Router>
+          </div>
 
-        <Toaster
-          toastOptions={{
-            className: "",
-            style: {
-              fontSize: "13px"
-            },
-          }}
-        />
+          <Toaster
+            toastOptions={{
+              className: "",
+              style: {
+                fontSize: "13px"
+              },
+            }}
+          />
+        </ChatProvider>
       </UserProvider>
     </>
   )
