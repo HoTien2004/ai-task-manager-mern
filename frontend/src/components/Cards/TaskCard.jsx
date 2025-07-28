@@ -5,6 +5,7 @@ import { FiMessageSquare } from 'react-icons/fi';
 import Progress from '../Progress';
 import AvatarGroup from '../AvatarGroup';
 import { useChat } from '../../hooks/useChat';
+import { useUser } from '../../context/UserContext';
 
 const TaskCard = ({
     _id,
@@ -22,6 +23,7 @@ const TaskCard = ({
     onClick
 }) => {
     const { initializeTaskDiscussion } = useChat();
+    const { user } = useUser();
 
     const getStatusTagColor = () => {
         switch (status) {
@@ -89,22 +91,28 @@ const TaskCard = ({
                     </div>
                 </div>
 
-                <div className='flex items-center justify-between mt-3'>
-                    <AvatarGroup avatars={assignedTo || []} />
-                    <div className='flex items-center gap-1'>
+                <div className='w-full mt-3'>
+                    {/* Hàng trên chứa avatar và số lượng tệp đính kèm */}
+                    <div className='flex items-center justify-between'>
+                        <AvatarGroup avatars={assignedTo || []} />
                         {attachmentCount > 0 && (
                             <div className='flex items-center gap-2 bg-gray-100 px-2.5 py-1.5 rounded-lg'>
                                 <LuPaperclip className='text-gray-600' />
                                 <span className='text-xs text-gray-900'>{attachmentCount}</span>
                             </div>
                         )}
+                    </div>
+                    <div className='flex justify-end w-full mt-2'>{user?.role === 'admin' && (
                         <button
                             onClick={handleDiscussTask}
-                            className='p-2 rounded-full hover:bg-gray-100 transition-colors'
+                            className='p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors w-full'
                             title="Thảo luận về công việc này"
+
                         >
                             <FiMessageSquare className='text-gray-600' />
+                            <span className='font-family: sans-serif'>Thảo luận với Chat Bot về công việc này ?</span>
                         </button>
+                    )}
                     </div>
                 </div>
             </div>

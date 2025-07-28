@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 
@@ -48,6 +48,10 @@ const UserProvider = ({ children }) => {
             {children}
         </UserContext.Provider>
     )
+}
+
+export const useUser = () => {
+    return useContext(UserContext);
 }
 
 export default UserProvider

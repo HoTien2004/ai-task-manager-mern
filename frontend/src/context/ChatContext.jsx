@@ -15,8 +15,6 @@ export const ChatProvider = ({ children }) => {
 
     const [messageCache, setMessageCache] = useState({});
 
-    const [isInitializingDiscussion, setIsInitializingDiscussion] = useState(false);
-
     const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
 
     const [isAwaitingResponse, setIsAwaitingResponse] = useState(false);

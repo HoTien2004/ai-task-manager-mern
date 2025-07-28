@@ -38,20 +38,20 @@ const App = () => {
 
                 {/* Admin Routes */}
                 <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-                  <Route element={<AdminLayout />}>
-                    <Route path="/admin/dashboard" element={<Dashboard />} />
-                    <Route path="/admin/create-task" element={<CreateTask />} />
-                    <Route path="/admin/tasks" element={<ManageTasks />} />
-                    <Route path="/admin/users" element={<ManageUsers />} />
-                  </Route>
+                  {/* <Route element={<AdminLayout />}> */}
+                  <Route path="/admin/dashboard" element={<Dashboard />} />
+                  <Route path="/admin/create-task" element={<CreateTask />} />
+                  <Route path="/admin/tasks" element={<ManageTasks />} />
+                  <Route path="/admin/users" element={<ManageUsers />} />
+                  {/* </Route> */}
                 </Route>
 
                 {/* User Routes */}
-                <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-                  <Route path="/user/dashboard" element={<UserDashboard />} />
-                  <Route path="/user/tasks" element={<MyTasks />} />
-                  <Route path="/user/task-details/:id" element={<ViewTaskDetails />} />
-                </Route>
+                {/* <Route element={<PrivateRoute allowedRoles={["admin"]} />}> */}
+                <Route path="/user/dashboard" element={<UserDashboard />} />
+                <Route path="/user/tasks" element={<MyTasks />} />
+                <Route path="/user/task-details/:id" element={<ViewTaskDetails />} />
+                {/* </Route> */}
 
                 {/* Default Route */}
                 <Route path="/" element={<Root />} />
@@ -68,7 +68,7 @@ const App = () => {
             }}
           />
         </ChatProvider>
-      </UserProvider>
+      </UserProvider >
     </>
   )
 }

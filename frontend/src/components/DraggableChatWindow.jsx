@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import { FiMaximize, FiMinimize, FiX, FiChevronDown, FiTrash2, FiLoader, FiPlusCircle } from 'react-icons/fi';
 
 const DraggableChatWindow = () => {
-    const [viewMode, setViewMode] = useState('minimized');
+    const [isMaximized, setIsMaximized] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -16,7 +16,9 @@ const DraggableChatWindow = () => {
         conversations, switchConversation, deleteConversation,
         currentConversationId, isInitialized, initializeChat,
         startNewConversation,
-        isAwaitingResponse
+        isAwaitingResponse,
+        isChatWindowOpen,
+        setIsChatWindowOpen,
     } = useChat();
 
     const chatBodyRef = useRef(null);
@@ -27,7 +29,6 @@ const DraggableChatWindow = () => {
         "Làm thế nào để cải thiện hiệu suất của một ứng dụng React?",
         "Giải thích sự khác biệt giữa `let`, `const`, và `var` trong JavaScript.",
         "Viết một hàm Python để đảo ngược một chuỗi.",
-        "Tóm tắt các lợi ích của việc sử dụng TypeScript."
     ];
 
     useEffect(() => {
@@ -46,15 +47,6 @@ const DraggableChatWindow = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef]);
 
-
-    // useEffect(() => {
-    //     if (isChatWindowOpen) {
-    //         setViewMode('normal');
-    //     } else {
-    //         setViewMode('minimized');
-    //     }
-    // }, [isChatWindowOpen]);
-
     const handleSendMessage = () => {
         if (!inputValue.trim()) return;
         sendMessage(inputValue);
@@ -72,14 +64,17 @@ const DraggableChatWindow = () => {
         }
     };
 
-    const handleMaximizeToggle = () => setViewMode(prev => prev === 'maximized' ? 'normal' : 'maximized');
-    const handleMinimize = () => setViewMode('minimized');
+    const handleMaximizeToggle = () => setIsMaximized(prev => !prev);
+
+    const handleMinimize = () => {
+        setIsChatWindowOpen(false);
+    };
 
     const handleRestoreFromIcon = () => {
         if (!isInitialized) {
             initializeChat();
         }
-        setViewMode('normal');
+        setIsChatWindowOpen(true);
     };
 
     const handleDeleteClick = (e, conversationId) => {
@@ -107,7 +102,7 @@ const DraggableChatWindow = () => {
                 <span>Chat Support</span>
                 <div className="chat-header-buttons">
                     <button className="chat-header-btn" onClick={handleMaximizeToggle}>
-                        {viewMode === 'maximized' ? <FiMinimize /> : <FiMaximize />}
+                        {isMaximized ? <FiMinimize /> : <FiMaximize />}
                     </button>
                     <button className="chat-header-btn" onClick={handleMinimize}><FiX /></button>
                 </div>
@@ -169,14 +164,10 @@ const DraggableChatWindow = () => {
                     <>
                         {messages.map((msg, index) => {
                             const role = msg.role === 'user' ? 'you' : 'bot';
-
                             let textContent = '';
                             if (msg.parts && msg.parts.length > 0 && typeof msg.parts[0].text !== 'undefined') {
                                 textContent = msg.parts[0].text;
-                            } else if (msg.content && msg.content.length > 0 && typeof msg.content[0].text !== 'undefined') {
-                                textContent = msg.content[0].text;
                             }
-
                             return (
                                 <div key={msg.id || index} className={`chat-message ${role}`}>
                                     <div className="message-content">
@@ -195,7 +186,6 @@ const DraggableChatWindow = () => {
                                 </div>
                             </div>
                         )}
-
                     </>
                 )}
             </div>
@@ -209,12 +199,12 @@ const DraggableChatWindow = () => {
                     placeholder="Nhập tin nhắn..."
                     disabled={isLoading || isAwaitingResponse || !isInitialized}
                 />
-                <button onClick={handleSendMessage} disabled={isLoading || !isInitialized || !inputValue.trim()}>Gửi</button>
+                <button onClick={handleSendMessage} disabled={isLoading || isAwaitingResponse || !isInitialized || !inputValue.trim()}>Gửi</button>
             </div>
         </>
     );
 
-    if (viewMode === 'minimized') {
+    if (!isChatWindowOpen) {
         return (
             <div className="chat-icon-container" onClick={handleRestoreFromIcon}>
                 💬
@@ -224,14 +214,14 @@ const DraggableChatWindow = () => {
 
     const windowComponent = (
         <div
-            className={viewMode === 'maximized' ? 'chat-window-maximized' : 'chat-window-draggable'}
-            ref={viewMode === 'normal' ? nodeRef : null}
+            className={isMaximized ? 'chat-window-maximized' : 'chat-window-draggable'}
+            ref={!isMaximized ? nodeRef : null}
         >
             {ChatWindowContent}
         </div>
     );
 
-    if (viewMode === 'maximized') {
+    if (isMaximized) {
         return <div className="maximized-overlay">{windowComponent}</div>;
     }
 
