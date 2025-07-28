@@ -11,7 +11,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    z-index: 99999;
+    z-index: 4;
     overflow: hidden;
 }
 
@@ -264,42 +264,86 @@
     margin: 0;
 }
 
-/* General styling for paragraphs, lists, etc. inside a message */
-.message-content>*:not(:last-child) {
-    margin-bottom: 12px;
-}
-
-/* Styling for bulleted and numbered lists */
-.message-content ul,
-.message-content ol {
-    padding-left: 25px;
-    margin-top: 5px;
-}
-
-/* Styling for code blocks (```) */
-.message-content pre {
-    background-color: #292a2c;
-    /* Dark background for code */
-    color: #00000000;
-    /* Light text color */
-    padding: 12px;
+/* Container for the entire code block including header */
+.code-block-wrapper {
+    position: relative;
     border-radius: 8px;
-    overflow-x: auto;
-    /* Allow horizontal scrolling for long code */
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
-    white-space: pre;
-    /* Preserve whitespace and newlines */
+    overflow: hidden;
+    margin: 12px 0;
 }
 
-/* Styling for inline code (`code`) */
+/* Header for the code block (language and copy button) */
+.code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #3a3a3a;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.code-language {
+    color: #dcdcdc;
+    font-family: sans-serif;
+    text-transform: uppercase;
+}
+
+.copy-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: transparent;
+    border: none;
+    color: #dcdcdc;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.copy-button:hover {
+    background-color: #555;
+}
+
+.copy-button.copied {
+    color: #4ade80;
+    /* A green color for success */
+}
+
+
+/* The <pre> tag itself, which holds the code, (```)*/
+.message-content pre {
+    background-color: #282c34;
+    /* Dark background */
+    color: #abb2bf;
+    /* Light text color */
+    padding: 16px;
+    margin: 0;
+    overflow-x: auto;
+    font-family: 'Fira Code', 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre;
+    border-radius: 8px;
+}
+
+/* Inline code styling */
 .message-content p code,
 .message-content li code {
-    background-color: #292a2c;
-    color: #bcc7ffe2;
+    background-color: #282c34;
+    color: #abb2bf;
     padding: 2px 6px;
     border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Fira Code', 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}
+
+/* Hiding the default code tag inside the styled pre */
+.message-content pre code {
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: inherit;
 }
 
 /* Styling for blockquotes (>) */

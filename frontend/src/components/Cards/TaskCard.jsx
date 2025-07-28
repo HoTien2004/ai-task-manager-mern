@@ -22,7 +22,7 @@ const TaskCard = ({
     todoChecklist,
     onClick
 }) => {
-    const { initializeTaskDiscussion } = useChat();
+    const { initializeTaskDiscussion, askForConfirmation } = useChat();
     const { user } = useUser();
 
     const getStatusTagColor = () => {
@@ -43,9 +43,17 @@ const TaskCard = ({
 
     const handleDiscussTask = (e) => {
         e.stopPropagation();
-        if (window.confirm(`Bạn có muốn tạo ra 1 cuộc thảo luận mới với chatbot về task ${title}?`)) {
-            initializeTaskDiscussion(_id);
-        }
+        const modalContent = (
+            <p className="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+                Bạn có chắc chắn muốn tạo một cuộc thảo luận mới với chatbot về công việc "{title}" không?
+            </p>
+        );
+
+        askForConfirmation(
+            'Xác nhận thảo luận',
+            modalContent,
+            () => initializeTaskDiscussion(_id)
+        );
     };
 
     return (

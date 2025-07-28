@@ -1,6 +1,7 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import axiosInstance from '../utils/axiosInstance';
 import { API_PATHS } from '../utils/apiPaths';
+import Modal from '../components/Modal';
 
 export const ChatContext = createContext();
 
@@ -11,13 +12,18 @@ export const ChatProvider = ({ children }) => {
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [isInitializingDiscussion, setIsInitializingDiscussion] = useState(false); // Add this state
     const [error, setError] = useState(null);
-
     const [messageCache, setMessageCache] = useState({});
-
     const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
-
     const [isAwaitingResponse, setIsAwaitingResponse] = useState(false);
+
+    const [confirmationState, setConfirmationState] = useState({
+        isOpen: false,
+        title: '',
+        content: null,
+        onConfirm: () => { }
+    });
 
     useEffect(() => {
         if (currentConversationId && messages.length > 0) {
@@ -27,6 +33,22 @@ export const ChatProvider = ({ children }) => {
             }));
         }
     }, [messages, currentConversationId]);
+
+    const askForConfirmation = (title, content, onConfirmAction) => {
+        setConfirmationState({
+            isOpen: true,
+            title,
+            content,
+            onConfirm: () => {
+                onConfirmAction();
+                closeConfirmation(); // Automatically close modal on confirm
+            }
+        });
+    };
+
+    const closeConfirmation = () => {
+        setConfirmationState({ isOpen: false, title: '', content: null, onConfirm: () => { } });
+    };
 
     const fetchConversations = useCallback(async () => {
         try {
@@ -108,26 +130,24 @@ export const ChatProvider = ({ children }) => {
 
 
     const deleteConversation = async (id) => {
-        // if (conversations.length <= 1) {
-        //     alert("Không thể xóa cuộc trò chuyện cuối cùng.");
-        //     return;
-        // }
         try {
-
             await axiosInstance.delete(API_PATHS.GEMINI.CONVERSATION.DELETE(id));
-
             setMessageCache(prevCache => {
                 const newCache = { ...prevCache };
                 delete newCache[id];
                 return newCache;
             });
 
-            if (id === currentConversationId) {
-                setMessages([]);
-                setCurrentConversationId(null);
-            }
+            const remainingConversations = await fetchConversations();
 
-            await fetchConversations();
+            if (id === currentConversationId) {
+                if (remainingConversations.length > 0) {
+                    await switchConversation(remainingConversations[0]._id);
+                } else {
+                    setMessages([]);
+                    setCurrentConversationId(null);
+                }
+            }
 
         } catch (err) {
             alert("Xóa cuộc trò chuyện thất bại.");
@@ -136,48 +156,30 @@ export const ChatProvider = ({ children }) => {
     };
 
     const sendMessage = async (messageText) => {
-        // [INSTRUCTION_B]
-        // This function is significantly updated.
-        // 1. It checks if there is a `currentConversationId`.
-        // 2. If not, it automatically calls the API to create a new conversation first.
-        // 3. It then uses this new ID to send the message.
-        // 4. It also ensures the optimistic UI update uses the correct `parts` structure.
-        // [INSTRUCTION_E]
         let conversationIdToUse = currentConversationId;
 
         try {
-            // If there's no active conversation, create one first.
             if (!conversationIdToUse) {
                 setIsLoading(true);
                 const response = await axiosInstance.post(API_PATHS.GEMINI.NEW_CHAT, {
-                    newTitle: ""
+                    newTitle: messageText.substring(0, 30)
                 });
                 const newConv = response.data;
                 conversationIdToUse = newConv.conversationId;
-
-                // Update state and refresh conversation list
                 setCurrentConversationId(conversationIdToUse);
                 await fetchConversations();
             }
 
-            // Optimistically update UI with the user's message
             const userMessage = { id: `msg-${Date.now()}`, role: 'user', parts: [{ text: messageText }] };
             setMessages(prev => [...prev, userMessage]);
-            setIsLoadingMessages(true);
-
             setIsAwaitingResponse(true);
-            // Send message to the backend
+
             const response = await axiosInstance.post(
                 API_PATHS.GEMINI.QUERY,
                 { message: messageText },
-                {
-                    params: {
-                        conversationId: conversationIdToUse
-                    }
-                }
+                { params: { conversationId: conversationIdToUse } }
             );
 
-            // Update UI with the bot's response
             const botMessage = { id: `bot-${Date.now()}`, role: 'model', parts: [{ text: response.data.response }] };
             setMessages(prev => [...prev, botMessage]);
 
@@ -186,7 +188,6 @@ export const ChatProvider = ({ children }) => {
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
-            setIsLoadingMessages(false);
             setIsAwaitingResponse(false);
         }
     };
@@ -195,36 +196,43 @@ export const ChatProvider = ({ children }) => {
         setIsInitializingDiscussion(true);
         setError(null);
         try {
+            setIsChatWindowOpen(true);
             const response = await axiosInstance.post(API_PATHS.GEMINI.TASK_HELP_INITIALIZE, { taskId });
             const { conversationId: newConversationId } = response.data;
 
             if (newConversationId) {
-                // Step 1: Fetch lại danh sách cuộc trò chuyện
                 await fetchConversations();
-                // Step 2: Chuyển sang cuộc trò chuyện mới
                 await switchConversation(newConversationId);
-
-                // [INSTRUCTION_B]
-                // This is the crucial new step. After all data is loaded and the
-                // conversation is switched, this line sets the global state to true,
-                // signaling the DraggableChatWindow component to open.
-                // [INSTRUCTION_E]
-                setIsChatWindowOpen(true);
             }
         } catch (err) {
             console.error("Failed to initialize task discussion:", err);
-            setError("Không thể bắt đầu cuộc trò chuyện cho công việc này.");
-            alert("Lỗi: Không thể bắt đầu cuộc trò chuyện. Vui lòng thử lại.");
+            const errorMsg = "Không thể bắt đầu cuộc trò chuyện cho công việc này.";
+            setError(errorMsg);
+            alert(`Lỗi: ${errorMsg} Vui lòng thử lại.`);
         } finally {
             setIsInitializingDiscussion(false);
         }
     };
 
+    const navigateToNextConversation = () => {
+        if (!isChatWindowOpen) {
+            setIsChatWindowOpen(true);
+        }
+        if (conversations.length < 2) return;
+        const currentIndex = conversations.findIndex(c => c._id === currentConversationId);
+        if (currentIndex === -1) {
+            switchConversation(conversations[0]._id);
+            return;
+        }
+        const nextIndex = (currentIndex + 1) % conversations.length;
+        const nextConversationId = conversations[nextIndex]._id;
+        switchConversation(nextConversationId);
+    };
 
     const value = {
         messages,
-        isLoading: isLoading || isLoadingMessages,
-        isAwaitingResponse, // Export trạng thái mớ
+        isLoading: isLoading || isLoadingMessages || isInitializingDiscussion, // Combine loading states
+        isAwaitingResponse,
         error,
         sendMessage,
         isInitialized,
@@ -234,8 +242,24 @@ export const ChatProvider = ({ children }) => {
         switchConversation,
         deleteConversation,
         startNewConversation,
-        initializeTaskDiscussion, // Expose the updated function
+        initializeTaskDiscussion,
+        isChatWindowOpen,
+        setIsChatWindowOpen,
+        navigateToNextConversation,
+        askForConfirmation,
     };
 
-    return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+    return (
+        <ChatContext.Provider value={value}>
+            {children}
+            <Modal
+                isOpen={confirmationState.isOpen}
+                onClose={closeConfirmation}
+                onConfirm={confirmationState.onConfirm}
+                title={confirmationState.title}
+            >
+                {confirmationState.content}
+            </Modal>
+        </ChatContext.Provider>
+    );
 };

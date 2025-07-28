@@ -19,11 +19,15 @@ const DraggableChatWindow = () => {
         isAwaitingResponse,
         isChatWindowOpen,
         setIsChatWindowOpen,
+        askForConfirmation,
     } = useChat();
 
+
     const chatBodyRef = useRef(null);
+    const lastMessageRef = useRef(null);
     const nodeRef = useRef(null);
     const dropdownRef = useRef(null);
+
 
     const SUGGESTED_PROMPTS = [
         "Làm thế nào để cải thiện hiệu suất của một ứng dụng React?",
@@ -32,8 +36,8 @@ const DraggableChatWindow = () => {
     ];
 
     useEffect(() => {
-        if (chatBodyRef.current) {
-            chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+        if (lastMessageRef.current) {
+            lastMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, [messages]);
 
@@ -77,11 +81,21 @@ const DraggableChatWindow = () => {
         setIsChatWindowOpen(true);
     };
 
-    const handleDeleteClick = (e, conversationId) => {
+    const handleDeleteClick = (e, conversationId, conversationTitle) => {
         e.stopPropagation();
-        if (window.confirm('Bạn có chắc chắn muốn xóa cuộc trò chuyện này?')) {
-            deleteConversation(conversationId);
-        }
+
+        const modalContent = (
+            <p className="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+                Bạn có chắc chắn muốn xóa vĩnh viễn cuộc trò chuyện
+                <strong className='text-gray-800 dark:text-white'> "{conversationTitle || 'không tên'}"</strong>?
+            </p>
+        );
+
+        askForConfirmation(
+            'Xác nhận xóa',
+            modalContent,
+            () => deleteConversation(conversationId)
+        );
     };
 
     const handleNewChat = () => {
